@@ -43,8 +43,6 @@ def load_annotation(path):
                 continue
             line = json.loads(line)
             line["page_id"] = int(line["page_id"])
-            if "token_offset" in line and line["token_offset"]["start"]["offset"] > 500:
-                print(line)
             ann[line["page_id"]].append(line)
     return ann
 
@@ -162,7 +160,7 @@ class ShinraData(object):
 
                         ne["text_offset"]["end"] = {
                             "line_id": line_id,
-                            "offset": text_offsets[end_offset-1]
+                            "offset": text_offsets[end_offset-1][1]
                         }
                         ne["page_id"] = self.page_id
                         ne["title"] = self.page_title

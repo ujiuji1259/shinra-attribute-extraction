@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # dataset = [ShinraData(), ....]
     dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
-    dataset = [d for idx, d in enumerate(dataset) if idx < 20 and d.nes is None]
+    dataset = [d for idx, d in enumerate(dataset) if idx < 20 and d.nes is not None]
 
     model = BertForMultilabelNER(bert, len(dataset[0].attributes), device)
     model.load_state_dict(torch.load(args.model_path))
