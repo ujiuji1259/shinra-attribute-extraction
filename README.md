@@ -1,7 +1,7 @@
 # shinra-attribute-extraction
 
 ## データ
-SHINRA2020の東北大BERTで前処理済みデータ
+SHINRA2020の東北大BERTでの[前処理済みデータ](http://shinra-project.info/shinra2020jp/data_download/)
 
 ## 学習
 `sh train.sh`
