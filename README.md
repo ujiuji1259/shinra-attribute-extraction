@@ -6,6 +6,8 @@ SHINRA2020の東北大BERTで前処理済みデータ
 ## 学習
 `sh train.sh`
 
+※ `model_path`はディレクトリです．validation setで最大精度のモデルと最終エポックのモデルを保存します．
+
 ### train.shの例
 ```bash
 python train.py \
@@ -20,7 +22,8 @@ python train.py \
 
 ## 予測
 `sh predict.sh`.   
-前処理済みのデータ（１カテゴリ）を入力に，森羅2020の出力形式で予測結果を出力
+前処理済みのデータ（１カテゴリ）を入力に，森羅2020の出力形式で予測結果を出力.   
+※ `model_path`はモデルファイルへのパスです．
 
 ### predict.shの例
 ```bash
