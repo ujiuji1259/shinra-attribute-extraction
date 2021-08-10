@@ -1,6 +1,6 @@
 python train.py \
-    --input_path /data1/ujiie/shinra/tohoku_bert/Event/Event_Other \
-    --model_path /home/is/ujiie/shinra-attribute-extraction/models/ \
+    --input_path /path/to/Event/Event_Other \
+    --model_path /path/to/model_dir \
     --lr 1e-5 \
     --bsz 32 \
     --epoch 50 \
