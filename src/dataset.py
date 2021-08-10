@@ -151,7 +151,7 @@ class ShinraData(object):
                     if is_chunk_end(iob[token_idx-1], iob[token_idx]):
                         assert ne != {}
                         # token_idxは本来のものから+2されているので，word2subwordはneの外のはじめのtoken_id
-                        end_offset = len(tokens) if token_idx >= len(word2subword) else word2subword[token_idx-1]
+                        end_offset = len(tokens) if token_idx - 1 >= len(word2subword) else word2subword[token_idx-1]
                         ne["token_offset"]["end"] = {
                             "line_id": line_id,
                             "offset": end_offset
