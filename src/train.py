@@ -14,11 +14,11 @@ import mlflow
 from sklearn.model_selection import train_test_split
 
 from dataset import ShinraData
-from dataset import NerDataset, ner_collate_fn, create_batch_dataset_for_ner, decode_iob
+from dataset import NerDataset, ner_collate_fn, decode_iob
 from model import BertForMultilabelNER
 from predict import predict
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
 
 class EarlyStopping():
@@ -142,8 +142,8 @@ if __name__ == "__main__":
 
     model = BertForMultilabelNER(bert, len(dataset[0].attributes), device).to(device)
     train_dataset, valid_dataset = train_test_split(dataset, test_size=0.1)
-    train_dataset = NerDataset(create_batch_dataset_for_ner(train_dataset), tokenizer)
-    valid_dataset = NerDataset(create_batch_dataset_for_ner(valid_dataset), tokenizer)
+    train_dataset = NerDataset([d for train_d in train_dataset for d in train_d.ner_inputs], tokenizer)
+    valid_dataset = NerDataset([d for valid_d in valid_dataset for d in valid_d.ner_inputs], tokenizer)
 
     mlflow.start_run()
     mlflow.log_params(vars(args))

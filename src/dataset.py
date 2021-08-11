@@ -71,6 +71,7 @@ class ShinraData(object):
         self.word_alignments = None
         self.sub2word = None
         self.text_offsets = None
+        self.valid_line_ids = None
         self.nes = None
 
         for key, value in params.items():
@@ -103,6 +104,7 @@ class ShinraData(object):
         for token_file in tqdm(input_path.glob("tokens/*.txt")):
             page_id = int(token_file.stem)
             tokens, text_offsets = load_tokens(token_file, vocab)
+            valid_line_ids = [idx for idx, token in enumerate(tokens) if len(token) > 0]
 
             # find title
             title = "".join([t[2:] if t.startswith("##") else t for t in tokens[4]])
@@ -122,6 +124,7 @@ class ShinraData(object):
                 "text_offsets": text_offsets,
                 "word_alignments": word_alignments,
                 "sub2word": sub2word,
+                "valid_line_ids": valid_line_ids,
             }
 
             if page_id in anns:
@@ -133,14 +136,11 @@ class ShinraData(object):
 
     # iobs = [sents1, sents2, ...]
     # sents1 = [[iob1_attr1, iob2_attr1, ...], [iob1_attr2, iob2_attr2, ...], ...]
-    def add_nes_from_iob(self, iobs, valid_line_ids=None):
+    def add_nes_from_iob(self, iobs):
+        assert len(iobs) == len(self.valid_line_ids)
         self.nes = []
-        if valid_line_ids is None:
-            ite = enumerate(iobs)
-        else:
-            ite = zip(valid_line_ids, iobs)
 
-        for line_id, sent_iob in ite:
+        for line_id, sent_iob in zip(self.valid_line_ids, iobs):
             word2subword = self.word_alignments[line_id]
             tokens = self.tokens[line_id]
             text_offsets = self.text_offsets[line_id]
@@ -186,15 +186,23 @@ class ShinraData(object):
 
     @property
     def ner_inputs(self):
-        outputs = {}
+        outputs = []
+        iobs = self.iob
+        for idx in self.valid_line_ids:
+            sent = {
+                "tokens": self.tokens[idx],
+                "word_idxs": self.word_alignments[idx],
+                "labels": iobs[idx] if self.nes is not None else None
+            }
+            outputs.append(sent)
 
-        outputs["input_ids"] = self.tokens
-        outputs["word_idxs"] = self.word_alignments.copy()
+        # outputs["input_ids"] = self.tokens
+        # outputs["word_idxs"] = self.word_alignments.copy()
 
-        if self.nes is not None:
-            outputs["labels"] = self.iob
-        else:
-            outputs["labels"] = [None for i in range(len(self.tokens))]
+        # if self.nes is not None:
+        #     outputs["labels"] = self.iob
+        # else:
+        #     outputs["labels"] = [None for i in range(len(self.tokens))]
 
         return outputs
 
@@ -245,27 +253,6 @@ class ShinraData(object):
         return iobs
 
 
-def create_batch_dataset_for_ner(datasets):
-    outputs = [output for d in datasets for output in create_dataset_for_ner(d)[0]]
-    return outputs
-
-
-def create_dataset_for_ner(dataset):
-    outputs = []
-    ner_inputs = dataset.ner_inputs
-
-    valid_line_id = []
-    for idx, data in enumerate(ner_inputs["input_ids"]):
-        if len(data) > 0:
-            outputs.append({
-                "tokens": data,
-                "word_idxs": ner_inputs["word_idxs"][idx],
-                "labels": ner_inputs["labels"][idx],
-            })
-            valid_line_id.append(idx)
-
-    return outputs, valid_line_id
-
 class NerDataset(Dataset):
     label2id = {
         "O": 0,
@@ -314,6 +301,6 @@ def decode_iob(preds, attributes):
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("cl-tohoku/bert-base-japanese")
-    dataset = ShinraData.from_shinra2020_format("/data1/ujiie/shinra/tohoku_bert/JP-5/Airport")
-    for data in dataset:
-        print([len(d) for d in data.tokens])
+    shinra_dataset = ShinraData.from_shinra2020_format("/data1/ujiie/shinra/tohoku_bert/Event/Event_Other")
+    dataset = NerDataset(shinra_dataset[0].ner_inputs, tokenizer)
+    print(dataset[0])

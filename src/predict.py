@@ -10,19 +10,22 @@ import torch.optim as optim
 from transformers import AutoTokenizer, AutoModel
 from tqdm import tqdm
 
-from dataset import ShinraData, NerDataset, ner_collate_fn, create_dataset_for_ner
+from dataset import ShinraData, NerDataset, ner_collate_fn
 from model import BertForMultilabelNER
 
+import os
 
-device = "cuda:1" if torch.cuda.is_available() else "cpu"
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def ner_for_shinradata(model, tokenizer, shinra_dataset, device):
-    processed_data, valid_line_id = create_dataset_for_ner(shinra_dataset)
+    processed_data = shinra_dataset.ner_inputs
     dataset = NerDataset(processed_data, tokenizer)
     total_preds, _ = predict(model, dataset, device, sent_wise=True)
 
-    shinra_dataset.add_nes_from_iob(total_preds, valid_line_ids=valid_line_id)
+    shinra_dataset.add_nes_from_iob(total_preds)
 
     return shinra_dataset
 
