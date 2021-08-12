@@ -1,7 +1,11 @@
 # shinra-attribute-extraction
 
 ## データ
-SHINRA2020の[東北大BERT](https://github.com/cl-tohoku/bert-japanese)での[前処理済みデータ](http://shinra-project.info/shinra2020jp/data_download/)
+SHINRA2020での[前処理済みデータ](http://shinra-project.info/shinra2020jp/data_download/)を使用
+
+## モデル
+事前学習済みモデルとして[東北大BERT](https://github.com/cl-tohoku/bert-japanese)を使用しています．
+BERTの上に属性ごとに独立した分類層を乗せています．
 
 ## 学習
 `sh train.sh`
