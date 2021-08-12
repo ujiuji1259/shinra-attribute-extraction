@@ -11,13 +11,11 @@ from transformers import AutoTokenizer, AutoModel
 from tqdm import tqdm
 
 from dataset import ShinraData, NerDataset, ner_collate_fn
-from model import BertForMultilabelNER
+from model import BertForMultilabelNER, create_pooler_matrix
 
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
 
 def ner_for_shinradata(model, tokenizer, shinra_dataset, device):
@@ -45,11 +43,13 @@ def predict(model, dataset, device, sent_wise=False):
 
             input_ids = pad_sequence([torch.tensor(t) for t in input_ids], padding_value=0, batch_first=True).to(device)
             attention_mask = input_ids > 0
+            pooling_matrix = create_pooler_matrix(input_ids, word_idxs, pool_type="head").to(device)
 
             preds = model.predict(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 word_idxs=word_idxs,
+                pooling_matrix=pooling_matrix
             )
 
             total_preds.append(preds)
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
     dataset = [d for idx, d in enumerate(dataset) if idx < 20 and d.nes is not None]
 
-    model = BertForMultilabelNER(bert, len(dataset[0].attributes), device)
+    model = BertForMultilabelNER(bert, len(dataset[0].attributes))
     model.load_state_dict(torch.load(args.model_path))
     model.to(device)
 

@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 from dataset import ShinraData
 from dataset import NerDataset, ner_collate_fn, decode_iob
-from model import BertForMultilabelNER
+from model import BertForMultilabelNER, create_pooler_matrix
 from predict import predict
 
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
@@ -91,12 +91,13 @@ def train(model, train_dataset, valid_dataset, attributes, args):
 
             input_ids = pad_sequence([torch.tensor(t) for t in input_ids], padding_value=0, batch_first=True).to(device)
             attention_mask = input_ids > 0
+            pooling_matrix = create_pooler_matrix(input_ids, word_idxs, pool_type="head").to(device)
 
             outputs = model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                word_idxs=word_idxs,
-                labels=labels)
+                labels=labels,
+                pooling_matrix=pooling_matrix)
 
             loss = outputs[0]
             loss.backward()
@@ -140,7 +141,7 @@ if __name__ == "__main__":
     dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
     dataset = [d for d in dataset if d.nes is not None]
 
-    model = BertForMultilabelNER(bert, len(dataset[0].attributes), device).to(device)
+    model = BertForMultilabelNER(bert, len(dataset[0].attributes)).to(device)
     train_dataset, valid_dataset = train_test_split(dataset, test_size=0.1)
     train_dataset = NerDataset([d for train_d in train_dataset for d in train_d.ner_inputs], tokenizer)
     valid_dataset = NerDataset([d for valid_d in valid_dataset for d in valid_d.ner_inputs], tokenizer)

@@ -3,8 +3,29 @@ import torch.nn as nn
 from transformers import AutoModel
 import numpy as np
 
+
+def create_pooler_matrix(input_ids, word_idxs, pool_type="head"):
+    bsz, subword_len = input_ids.size()
+    max_word_len = max([len(w) for w in word_idxs])
+    pooler_matrix = torch.zeros(bsz * max_word_len * subword_len)
+
+    if pool_type == "head":
+        pooler_idxs = [subword_len * max_word_len * batch_offset +  subword_len * word_offset + w
+            for batch_offset, word_idx in enumerate(word_idxs) for word_offset, w in enumerate(word_idx[:-1])]
+        pooler_matrix.scatter_(0, torch.LongTensor(pooler_idxs), 1)
+        return pooler_matrix.view(bsz, max_word_len, subword_len)
+
+    elif pool_type == "average":
+        pooler_idxs = [subword_len * max_word_len * batch_offset +  subword_len * word_offset + w / (word_idx[word_offset+1] - word_idx[word_offset])
+            for batch_offset, word_idx in enumerate(word_idxs)
+            for word_offset, _ in enumerate(word_idx[:-1])
+            for w in range(word_idx[word_offset], word_idx[word_offset+1])]
+        pooler_matrix.scatter_(0, torch.LongTensor(pooler_idxs), 1)
+        return pooler_matrix.view(bsz, max_word_len, subword_len)
+
+
 class BertForMultilabelNER(nn.Module):
-    def __init__(self, bert, attribute_num, device, dropout=0.1, pooler="head"):
+    def __init__(self, bert, attribute_num, dropout=0.1):
         super().__init__()
         self.bert = bert
         self.dropout = nn.Dropout(dropout)
@@ -19,44 +40,22 @@ class BertForMultilabelNER(nn.Module):
         classifiers = [nn.Linear(768, 3) for i in range(attribute_num)]
         self.classifiers = nn.ModuleList(classifiers)
 
-        # pooler type, "head" "average", which specify how to pool subword representations into word representation
-        self.pooler = pooler
-        self.device = device
-
-    def _create_pooler_matrix(self, input_ids, word_idxs):
-        bsz, subword_len = input_ids.size()
-        max_word_len = max([len(w) for w in word_idxs])
-        pooler_matrix = torch.zeros(bsz * max_word_len * subword_len)
-
-        if self.pooler == "head":
-            pooler_idxs = [subword_len * max_word_len * batch_offset +  subword_len * word_offset + w
-                for batch_offset, word_idx in enumerate(word_idxs) for word_offset, w in enumerate(word_idx)]
-            pooler_matrix.scatter_(0, torch.LongTensor(pooler_idxs), 1)
-            return pooler_matrix.view(bsz, max_word_len, subword_len).to(self.device)
-
-        """
-        elif self.pooler == "average":
-            pooler_idxs = [subword_len * max_word_len * batch_offset +  subword_len * word_offset + w
-                for batch_offset, word_idx in enumerate(word_idxs)
-                for word_offset, w in enumerate(word_idx)]
-            pooler_matrix.scatter_(0, torch.LongTensor(pooler_idxs), 1)
-            return pooler_matrix.view(bsz, max_word_len, subword_len)
-        """
 
     def predict(
         self,
         input_ids=None,
         attention_mask=None,
-        word_idxs=None
+        word_idxs=None,
+        pooling_matrix=None,
     ):
         logits = self.forward(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            word_idxs=word_idxs)[0]
+            pooling_matrix=pooling_matrix)[0]
         #labels = [torch.argmax(logit.detach().cpu(), dim=-1) for logit in logits]
         labels = [self.viterbi(logit.detach().cpu()) for logit in logits]
 
-        truncated_labels = [[label[:len(word_idx)] for label, word_idx in zip(attr_labels, word_idxs)] for attr_labels in labels]
+        truncated_labels = [[label[:len(word_idx)-1] for label, word_idx in zip(attr_labels, word_idxs)] for attr_labels in labels]
 
         return truncated_labels
 
@@ -66,14 +65,12 @@ class BertForMultilabelNER(nn.Module):
         input_ids=None,
         attention_mask=None,
         labels=None,
-        word_idxs=None
+        pooling_matrix=None,
     ):
-        pooler_matrix = self._create_pooler_matrix(input_ids, word_idxs)
-
         outputs = self.bert(input_ids, attention_mask=attention_mask)
         sequence_output = outputs[0]
         # create word-level representations using pooler matrix
-        sequence_output = torch.bmm(pooler_matrix, sequence_output)
+        sequence_output = torch.bmm(pooling_matrix, sequence_output)
         sequence_output = self.dropout(sequence_output)
 
         # hiddens = [self.relu(layer(sequence_output)) for layer in self.output_layer]

@@ -55,6 +55,11 @@ def find_word_alignment(tokens):
             word_idxs.append(idx)
         sub2word[idx] = len(word_idxs) - 1
 
+    # add word_idx for end offset
+    if len(tokens) > 0:
+        word_idxs.append(len(tokens))
+        sub2word[len(tokens)] = len(word_idxs) - 1
+
     return word_idxs, sub2word
 
 
@@ -137,7 +142,7 @@ class ShinraData(object):
     # iobs = [sents1, sents2, ...]
     # sents1 = [[iob1_attr1, iob2_attr1, ...], [iob1_attr2, iob2_attr2, ...], ...]
     def add_nes_from_iob(self, iobs):
-        assert len(iobs) == len(self.valid_line_ids)
+        assert len(iobs) == len(self.valid_line_ids), f"{len(iobs)}, {len(self.valid_line_ids)}"
         self.nes = []
 
         for line_id, sent_iob in zip(self.valid_line_ids, iobs):
@@ -152,6 +157,7 @@ class ShinraData(object):
                         assert ne != {}
                         # token_idxは本来のものから+2されているので，word2subwordはneの外のはじめのtoken_id
                         end_offset = len(tokens) if token_idx - 1 >= len(word2subword) else word2subword[token_idx-1]
+                        # end_offset = len(tokens) if token_idx >= len(word2subword) else word2subword[token_idx-1]
                         ne["token_offset"]["end"] = {
                             "line_id": line_id,
                             "offset": end_offset
@@ -229,7 +235,7 @@ class ShinraData(object):
 
         {"O": 0, "B": 1, "I": 2}
         """
-        iobs = [[["O" for _ in range(len(tokens))] for _ in range(len(self.attributes))] for tokens in self.word_alignments]
+        iobs = [[["O" for _ in range(len(tokens)-1)] for _ in range(len(self.attributes))] for tokens in self.word_alignments]
         for ne in self.nes:
             if "token_offset" not in ne:
                 continue
@@ -239,6 +245,7 @@ class ShinraData(object):
             end_line = int(ne["token_offset"]["end"]["line_id"])
             end_offset = int(ne["token_offset"]["end"]["offset"])
 
+            # 文を跨いだentityは除外
             if start_line != end_line:
                 continue
 
@@ -274,8 +281,8 @@ class NerDataset(Dataset):
 
         labels = self.data[item]["labels"]
         if labels is not None:
-            # truncate label using zip(_, word_idxs)
-            labels = [[self.label2id[l] for l, _ in zip(label, word_idxs)] for label in labels]
+            # truncate label using zip(_, word_idxs[:-1]), word_idxs[-1] is not valid idx (for end offset)
+            labels = [[self.label2id[l] for l, _ in zip(label, word_idxs[:-1])] for label in labels]
 
         return input_ids, word_idxs, labels
 
