@@ -1,4 +1,4 @@
 python predict.py \
-    --input_path /data1/ujiie/shinra/tohoku_bert/Event/Event_Other \
-    --model_path /home/is/ujiie/shinra-pipeline/models/Event_Other.model \
-    --output_path output.jsonl
+    --input_path /path/to/Target_Category \
+    --model_path /path/to/model_file \
+    --output_path /path/to/output_file
