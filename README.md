@@ -15,8 +15,8 @@ BERTの上に属性ごとに独立した分類層を乗せています．
 ### train.shの例
 ```bash
 python train.py \
-    --input_path /path/to/Event/Event_Other \
-    --model_path /path/to/model_dir \
+    --input_path /path/to/Target_Category \
+    --model_path /path/to/model_directory \
     --lr 1e-5 \
     --bsz 32 \
     --epoch 50 \
@@ -32,7 +32,7 @@ python train.py \
 ### predict.shの例
 ```bash
 python predict.py \
-    --input_path /path/to/Event/Event_Other \
+    --input_path /path/to/Target_Category \
     --model_path /path/to/model_file \
-    --output_path output.jsonl
+    --output_path /path/to/output_file
 ```
