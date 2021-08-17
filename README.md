@@ -1,7 +1,7 @@
 # shinra-attribute-extraction
 
 ## データ
-SHINRA2020での[前処理済みデータ](http://shinra-project.info/shinra2020jp/data_download/)を使用
+SHINRA2020での[前処理済みデータ](http://shinra-project.info/shinra2020jp/data_download/)の森羅2020-JPタスクの学習・ターゲットデータ（トークナイズ済み, Mecab(IPA辞書)&BPE使用, 東北大BERT対応)を使用しています。
 
 ## モデル
 事前学習済みモデルとして[東北大BERT](https://github.com/cl-tohoku/bert-japanese)を使用しています．
