@@ -135,9 +135,7 @@ class ShinraData(object):
             if page_id in anns:
                 data["nes"] = anns[page_id]
 
-            docs.append(cls(attributes, params=data))
-
-        return docs
+            yield cls(attributes, params=data)
 
     # iobs = [sents1, sents2, ...]
     # sents1 = [[iob1_attr1, iob2_attr1, ...], [iob1_attr2, iob2_attr2, ...], ...]
@@ -193,12 +191,12 @@ class ShinraData(object):
     @property
     def ner_inputs(self):
         outputs = []
-        iobs = self.iob
+        iobs = self.iob if self.nes is not None else None
         for idx in self.valid_line_ids:
             sent = {
                 "tokens": self.tokens[idx],
                 "word_idxs": self.word_alignments[idx],
-                "labels": iobs[idx] if self.nes is not None else None
+                "labels": iobs[idx] if iobs is not None else None
             }
             outputs.append(sent)
 

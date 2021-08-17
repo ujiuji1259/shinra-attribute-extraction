@@ -18,7 +18,7 @@ from dataset import NerDataset, ner_collate_fn, decode_iob
 from model import BertForMultilabelNER, create_pooler_matrix
 from predict import predict
 
-device = "cuda:1" if torch.cuda.is_available() else "cpu"
+device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
 
 class EarlyStopping():
@@ -138,16 +138,24 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("cl-tohoku/bert-base-japanese")
 
     # dataset = [ShinraData(), ....]
-    dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
-    dataset = [d for d in dataset if d.nes is not None]
+    shinra_dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
+    dataset = []
+    attributes = None
+    for idx, data in enumerate(shinra_dataset):
+        if idx == 0:
+            attributes = data.attributes.copy()
 
-    model = BertForMultilabelNER(bert, len(dataset[0].attributes)).to(device)
+        if data.nes is not None:
+            dataset.append(data.ner_inputs)
+    # dataset = [d.ner_inputs for d in dataset if d.nes is not None]
+
+    model = BertForMultilabelNER(bert, len(attributes)).to(device)
     train_dataset, valid_dataset = train_test_split(dataset, test_size=0.1)
-    train_dataset = NerDataset([d for train_d in train_dataset for d in train_d.ner_inputs], tokenizer)
-    valid_dataset = NerDataset([d for valid_d in valid_dataset for d in valid_d.ner_inputs], tokenizer)
+    train_dataset = NerDataset([d for train_d in train_dataset for d in train_d], tokenizer)
+    valid_dataset = NerDataset([d for valid_d in valid_dataset for d in valid_d], tokenizer)
 
     mlflow.start_run()
     mlflow.log_params(vars(args))
-    train(model, train_dataset, valid_dataset, dataset[0].attributes, args)
+    train(model, train_dataset, valid_dataset, attributes, args)
     torch.save(model.state_dict(), args.model_path + "last.model")
     mlflow.end_run()

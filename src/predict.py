@@ -85,14 +85,23 @@ if __name__ == "__main__":
     bert = AutoModel.from_pretrained("cl-tohoku/bert-base-japanese")
     tokenizer = AutoTokenizer.from_pretrained("cl-tohoku/bert-base-japanese")
 
-    # dataset = [ShinraData(), ....]
-    dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
-    dataset = [d for idx, d in enumerate(dataset) if idx < 20 and d.nes is not None]
+    input_path = Path(args.input_path)
+    assert (input_path / "attributes.txt").exists()
+    with open(input_path / "attributes.txt", "r") as f:
+        attributes = [attr for attr in f.read().split("\n") if attr != '']
 
-    model = BertForMultilabelNER(bert, len(dataset[0].attributes))
+    model = BertForMultilabelNER(bert, len(attributes))
     model.load_state_dict(torch.load(args.model_path))
     model.to(device)
 
-    dataset = [ner_for_shinradata(model, tokenizer, d, device) for d in dataset]
+    # dataset = [ShinraData(), ....]
+    dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
+    # dataset = [d for idx, d in enumerate(dataset) if idx < 20 and d.nes is not None]
+
+    # dataset = [ner_for_shinradata(model, tokenizer, d, device) for d in dataset]
     with open(args.output_path, "w") as f:
-        f.write("\n".join([json.dumps(ne, ensure_ascii=False) for d in dataset for ne in d.nes]))
+        for data in dataset:
+            if data.nes is None:
+                processed_data = ner_for_shinradata(model, tokenizer, data, device)
+                f.write("\n".join([json.dumps(ne, ensure_ascii=False) for ne in processed_data.nes]))
+                f.write("\n")
