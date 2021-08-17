@@ -6,7 +6,7 @@ import numpy as np
 
 def create_pooler_matrix(input_ids, word_idxs, pool_type="head"):
     bsz, subword_len = input_ids.size()
-    max_word_len = max([len(w) for w in word_idxs])
+    max_word_len = max([len(w)-1 for w in word_idxs])
     pooler_matrix = torch.zeros(bsz * max_word_len * subword_len)
 
     if pool_type == "head":
