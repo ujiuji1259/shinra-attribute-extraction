@@ -73,9 +73,9 @@ class BertForMultilabelNER(nn.Module):
         sequence_output = torch.bmm(pooling_matrix, sequence_output)
         sequence_output = self.dropout(sequence_output)
 
-        # hiddens = [self.relu(layer(sequence_output)) for layer in self.output_layer]
-        # logits = [classifier(hiddens) for classifier, hiddens in zip(self.classifiers, hiddens)]
-        logits = [classifier(sequence_output) for classifier in self.classifiers]
+        hiddens = [self.relu(layer(sequence_output)) for layer in self.output_layer]
+        logits = [classifier(hiddens) for classifier, hiddens in zip(self.classifiers, hiddens)]
+        # logits = [classifier(sequence_output) for classifier in self.classifiers]
 
         loss = None
         if labels is not None:
