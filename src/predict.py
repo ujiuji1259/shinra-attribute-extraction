@@ -15,7 +15,6 @@ from model import BertForMultilabelNER, create_pooler_matrix
 
 import os
 
-device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
 
 def ner_for_shinradata(model, tokenizer, shinra_dataset, device):
@@ -73,7 +72,7 @@ def parse_arg():
     parser.add_argument("--input_path", type=str, help="Specify input path in SHINRA2020")
     parser.add_argument("--model_path", type=str, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--output_path", type=str, help="Specify attribute_list path in SHINRA2020")
-
+    parser.add_argument("--cuda", type=int, help="Specify attribute_list path in SHINRA2020")
     args = parser.parse_args()
 
     return args
@@ -81,6 +80,11 @@ def parse_arg():
 
 if __name__ == "__main__":
     args = parse_arg()
+
+    if torch.cuda.is_available():
+        device = f"cuda:{args.cuda}"
+    else:
+        device = "cpu"
 
     bert = AutoModel.from_pretrained("cl-tohoku/bert-base-japanese")
     tokenizer = AutoTokenizer.from_pretrained("cl-tohoku/bert-base-japanese")
