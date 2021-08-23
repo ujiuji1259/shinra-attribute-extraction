@@ -12,6 +12,7 @@ from tqdm import tqdm
 from seqeval.metrics import f1_score, classification_report
 import mlflow
 from sklearn.model_selection import train_test_split
+from transformers.trainer_utils import set_seed
 
 from dataset import ShinraData
 from dataset import NerDataset, ner_collate_fn, decode_iob
@@ -52,6 +53,7 @@ def parse_arg():
     parser.add_argument("--epoch", type=int, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--grad_acc", type=int, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--grad_clip", type=float, help="Specify attribute_list path in SHINRA2020")
+    parser.add_argument("--seed", type=int, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--note", type=str, help="Specify attribute_list path in SHINRA2020")
 
     args = parser.parse_args()
@@ -133,6 +135,8 @@ def train(model, train_dataset, valid_dataset, attributes, args):
 
 if __name__ == "__main__":
     args = parse_arg()
+
+    set_seed(args.seed)
 
     bert = AutoModel.from_pretrained("cl-tohoku/bert-base-japanese")
     tokenizer = AutoTokenizer.from_pretrained("cl-tohoku/bert-base-japanese")
