@@ -6,3 +6,5 @@ python train.py \
     --epoch 50 \
     --grad_acc 1 \
     --grad_clip 1.0 \
+    --seed 0 \
+    --cuda 0 \
