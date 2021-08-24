@@ -19,7 +19,6 @@ from dataset import NerDataset, ner_collate_fn, decode_iob
 from model import BertForMultilabelNER, create_pooler_matrix
 from predict import predict
 
-device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
 
 class EarlyStopping():
@@ -54,6 +53,7 @@ def parse_arg():
     parser.add_argument("--grad_acc", type=int, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--grad_clip", type=float, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--seed", type=int, help="Specify attribute_list path in SHINRA2020")
+    parser.add_argument("--cuda", type=int, help="Specify attribute_list path in SHINRA2020")
     parser.add_argument("--note", type=str, help="Specify attribute_list path in SHINRA2020")
 
     args = parser.parse_args()
@@ -135,6 +135,11 @@ def train(model, train_dataset, valid_dataset, attributes, args):
 
 if __name__ == "__main__":
     args = parse_arg()
+
+    if torch.cuda.is_available():
+        device = f"cuda:{args.cuda}"
+    else:
+        device = "cpu"
 
     set_seed(args.seed)
 
