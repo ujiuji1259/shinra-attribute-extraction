@@ -1,4 +1,6 @@
 import os
+import random
+from numpy as np
 import argparse
 import sys
 from pathlib import Path
@@ -13,13 +15,22 @@ from tqdm import tqdm
 from seqeval.metrics import f1_score, classification_report
 import mlflow
 from sklearn.model_selection import train_test_split
-from transformers.trainer_utils import set_seed
 
 from dataset import ShinraData
 from dataset import NerDataset, ner_collate_fn, decode_iob
 from model import BertForMultilabelNER, create_pooler_matrix
 from predict import predict
 
+
+def set_seed(seed)
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 class EarlyStopping():

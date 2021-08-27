@@ -102,10 +102,26 @@ if __name__ == "__main__":
     dataset = ShinraData.from_shinra2020_format(Path(args.input_path))
     # dataset = [d for idx, d in enumerate(dataset) if idx < 20 and d.nes is not None]
 
+    def _post_processing(d):
+        d['page_id'] = int(d['page_id'])
+        for k1 in ['text_offset', 'html_offset', 'token_offset']:
+            for k2 in ['start', 'end']:
+                for k3 in ['offset', 'line_id']:
+                    try:
+                        d[k1][k2][k3] = int(d[k1][k2][k3])
+                    except KeyError:
+                        pass
+        return d
+
     # dataset = [ner_for_shinradata(model, tokenizer, d, device) for d in dataset]
     with open(args.output_path, "w") as f:
         for data in dataset:
             if data.nes is None:
                 processed_data = ner_for_shinradata(model, tokenizer, data, device)
-                f.write("\n".join([json.dumps(ne, ensure_ascii=False) for ne in processed_data.nes]))
+                lst = []
+                for ne in processed_data.nes:
+                    lst.append(json.dumps(_post_processing(ne), ensure_ascii=False))
+                if len(lst) == 0:
+                    continue
+                f.write("\n".join(lst))
                 f.write("\n")
