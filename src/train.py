@@ -161,6 +161,7 @@ if __name__ == "__main__":
 
     model = BertForMultilabelNER(bert, len(attributes)).to(device)
 
+    # TODO: optimizerやschedulerも読み込む
     last_model_path = args.model_path + "last.model"
     if os.path.exists(last_model_path):
         model.load_state_dict(torch.load(last_model_path))
