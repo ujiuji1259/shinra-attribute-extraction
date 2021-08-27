@@ -171,6 +171,15 @@ if __name__ == "__main__":
     # dataset = [d.ner_inputs for d in dataset if d.nes is not None]
 
     model = BertForMultilabelNER(bert, len(attributes)).to(device)
+
+    # TODO: optimizerやschedulerも読み込む
+    last_model_path = args.model_path + "last.model"
+    if os.path.exists(last_model_path):
+        model.load_state_dict(torch.load(last_model_path))
+        print('loaded previous trained model')
+    else:
+        print('train from the scratch')
+
     train_dataset, valid_dataset = train_test_split(dataset, test_size=0.1)
     train_dataset = NerDataset([d for train_d in train_dataset for d in train_d], tokenizer)
     valid_dataset = NerDataset([d for valid_d in valid_dataset for d in valid_d], tokenizer)
