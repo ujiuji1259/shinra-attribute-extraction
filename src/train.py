@@ -1,6 +1,6 @@
 import os
 import random
-from numpy as np
+import numpy as np
 import argparse
 import sys
 from pathlib import Path
@@ -22,7 +22,7 @@ from model import BertForMultilabelNER, create_pooler_matrix
 from predict import predict
 
 
-def set_seed(seed)
+def set_seed(seed):
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
