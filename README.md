@@ -7,6 +7,19 @@ SHINRA2020での[前処理済みデータ](http://shinra-project.info/shinra2020
 事前学習済みモデルとして[東北大BERT](https://github.com/cl-tohoku/bert-japanese)を使用しています．
 BERTの上に属性ごとに独立した分類層を乗せています．
 
+## 環境
+
+- pytorch
+- transformers>=3.0.1
+- fugashi
+- seqeval
+- mlflow
+
+### Docker
+[こちら](https://github.com/frisk0zisan/docker_pytorch)をご利用いただけます．
+
+
+
 ## 学習
 `sh train.sh`
 
